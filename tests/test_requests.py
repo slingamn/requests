@@ -872,5 +872,12 @@ class RequestsTestSuite(TestSetup, TestBaseMixin, unittest.TestCase):
         r2 = requests.get(httpbin('get'), config=dict(keep_alive=False))
         self.assertEqual(r2.headers['Connection'].lower(), 'close')
 
+    def test_timeout(self):
+        """Test timeouts."""
+        def timeout_request():
+            # make a request via the sync API that should time out
+            return requests.get(httpbin('delay', '3'), timeout=1)
+        self.assertRaises(requests.exceptions.Timeout, timeout_request)
+
 if __name__ == '__main__':
     unittest.main()

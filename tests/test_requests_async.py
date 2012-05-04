@@ -76,5 +76,12 @@ class AsyncTimedTests(TestBaseMixin, unittest.TestCase):
         # XXX this is brittle; if httpbin is slow, this could fail
         self.assertTrue(3 <= elapsed_time <= 6, elapsed_time)
 
+    def test_timeout(self):
+        """Test timeouts."""
+        def timeout_request():
+            # make a request via the sync API that should time out
+            return requests.get(httpbin('delay', '3'), timeout=1)
+        self.assertRaises(requests.exceptions.Timeout, timeout_request)
+
 if __name__ == '__main__':
     unittest.main()
