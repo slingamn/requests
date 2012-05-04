@@ -5,16 +5,17 @@
 import sys, os
 sys.path.insert(0, os.path.abspath('..'))
 
-import sys
+import time
 import unittest
 
 import select
 has_poll = hasattr(select, "poll")
 
+import requests
 from requests import async
 
 sys.path.append('.')
-from test_requests import httpbin, RequestsTestSuite, SERVICES
+from test_requests import httpbin, RequestsTestSuite, TestBaseMixin, SERVICES
 
 
 class RequestsTestSuiteUsingAsyncApi(RequestsTestSuite):
@@ -62,6 +63,18 @@ class RequestsTestSuiteUsingAsyncApi(RequestsTestSuite):
     def test_select_poll(self):
         """Test to make sure we don't overwrite the poll"""
         self.assertEqual(hasattr(select, "poll"), has_poll)
+
+class AsyncTimedTests(TestBaseMixin, unittest.TestCase):
+
+    def test_async_simultaneity(self):
+        """Test that async actually processes requests in parallel."""
+        reqs = [requests.async.get(httpbin('delay', '3')) for _ in range(4)]
+        start = time.time()
+        responses = requests.async.map(reqs)
+        elapsed_time = time.time() - start
+        self.assertEqual([r.status_code for r in responses], [200] * 4)
+        # XXX this is brittle; if httpbin is slow, this could fail
+        self.assertTrue(3 <= elapsed_time <= 6, elapsed_time)
 
 if __name__ == '__main__':
     unittest.main()
