@@ -113,6 +113,7 @@ class Session(object):
         Currently, this just closes the PoolManager, which closes pooled
         connections.
         """
+        print "closing requests.sessions.Session"
         self.poolmanager.clear()
 
     def request(self, method, url,

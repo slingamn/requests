@@ -189,6 +189,7 @@ class HTTPConnectionPool(ConnectionPool, RequestMethods):
         self.num_connections += 1
         log.info("Starting new HTTP connection (%d): %s" %
                  (self.num_connections, self.host))
+        print "adding new connection for", self.host
         return HTTPConnection(host=self.host, port=self.port)
 
     def _get_conn(self, timeout=None):
@@ -220,6 +221,7 @@ class HTTPConnectionPool(ConnectionPool, RequestMethods):
         # If this is a persistent connection, check if it got disconnected
         if conn and is_connection_dropped(conn):
             log.info("Resetting dropped connection: %s" % self.host)
+            print "Resetting dropped connection: %s" % self.host
             conn.close()
 
         return conn or self._new_conn()
@@ -239,6 +241,7 @@ class HTTPConnectionPool(ConnectionPool, RequestMethods):
         If the pool is closed, then the connection will be closed and discarded.
         """
         try:
+            print "returning to pool:", self.host, repr(conn.sock.fileno())
             self.pool.put(conn, block=False)
             return # Everything is dandy, done.
         except AttributeError:
@@ -294,9 +297,11 @@ class HTTPConnectionPool(ConnectionPool, RequestMethods):
             while True:
                 conn = old_pool.get(block=False)
                 if conn:
+                    print "Closing FD", self.host, conn.sock.fileno()
                     conn.close()
 
         except Empty:
+            print "Pool is empty:", self.host
             pass # Done.
 
     def is_same_host(self, url):
@@ -529,6 +534,7 @@ class HTTPSConnectionPool(HTTPConnectionPool):
 
             return HTTPSConnection(host=self.host, port=self.port)
 
+        print "adding new https connection for", self.host
         connection = VerifiedHTTPSConnection(host=self.host, port=self.port)
         connection.set_cert(key_file=self.key_file, cert_file=self.cert_file,
                             cert_reqs=self.cert_reqs, ca_certs=self.ca_certs)
